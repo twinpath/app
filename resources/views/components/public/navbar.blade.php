@@ -107,7 +107,9 @@
     class="fixed inset-0 z-40 md:hidden bg-white dark:bg-gray-900 pt-24 px-6">
     <div class="flex flex-col gap-6">
         <a href="{{ route('home') }}" @click="$store.sidebar.setMobileOpen(false)" class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4">Home</a>
-        <a href="{{ route('home') }}#features" @click="$store.sidebar.setMobileOpen(false); if(Route::is('home')) window.appSmoothScroll('#features')" class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4">Features</a>
+        <a href="{{ route('home') }}#features" 
+           @click="$store.sidebar.setMobileOpen(false)@if(Route::is('home')); window.appSmoothScroll('#features')@endif" 
+           class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4">Features</a>
         
         <div x-data="{ expanded: false }">
             <button @click="expanded = !expanded" class="w-full flex justify-between items-center text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-4">

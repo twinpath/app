@@ -81,13 +81,22 @@
             const savedTheme = localStorage.getItem('theme');
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             const theme = savedTheme || systemTheme;
+            
+            // Add to html immediately (works in <head>)
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
-                document.body.classList.add('dark', 'bg-gray-900');
             } else {
                 document.documentElement.classList.remove('dark');
-                document.body.classList.remove('dark', 'bg-gray-900');
             }
+
+            // Add to body after it's available
+            document.addEventListener('DOMContentLoaded', () => {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark', 'bg-gray-900');
+                } else {
+                    document.body.classList.remove('dark', 'bg-gray-900');
+                }
+            });
         })();
     </script>
     

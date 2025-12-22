@@ -5,27 +5,31 @@
 /storage/*.key
 /storage/pail
 /vendor
+
+# Environment files
 .env
 .env.backup
 .env.production
-.phpactor.json
+.env.*
+!.env.example
+
+# Development & IDEs
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+/.phpunit.cache
 .phpunit.result.cache
 .DS_Store
 Thumbs.db
 *.log
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
 /auth.json
 Homestead.json
 Homestead.yaml
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.phpunit.result.cache
 
 # SQLite
 /database/*.sqlite
@@ -41,7 +45,5 @@ mix-manifest.json
 /copy-release.php
 /make-release.bat
 /auth_backup.php
-/.idea
-/.vscode
 *.bak
 *.tmp
