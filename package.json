@@ -1,4 +1,6 @@
 {
+    "name": "app-ca-management",
+    "version": "1.0.0",
     "$schema": "https://json.schemastore.org/package.json",
     "private": true,
     "type": "module",
