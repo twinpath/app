@@ -244,7 +244,6 @@
         if (window.Echo) {
             window.Echo.private(`ticket.${ticketId}`)
                 .listen('.ticket.message.sent', (e) => {
-                    console.log('Realtime message received:', e);
                     appendMessage(e);
                 });
         }

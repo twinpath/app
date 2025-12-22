@@ -66,9 +66,11 @@ class SmtpTesterController extends Controller
 
             $duration = round((microtime(true) - $start) * 1000, 2);
 
-            return back()->with('success', "Test email sent successfully via '{$mailer}' (Mode: {$mode}) in {$duration}ms!");
+            return back()->with('success', "Test email sent successfully via '{$mailer}' (Mode: {$mode}) in {$duration}ms!")
+                ->with('title', 'Test Successful');
         } catch (Exception $e) {
-            return back()->with('error', "Connection Failed: " . $e->getMessage());
+            return back()->with('error', "Connection Failed: " . $e->getMessage())
+                ->with('title', 'Connection Failed');
         }
     }
 }

@@ -7,23 +7,23 @@
         if (session()->has('success')) {
             $variant = 'success';
             $message = session('success');
-            $title = 'Success';
+            $title = session('title') ?? 'Success';
         } elseif (session()->has('error')) {
             $variant = 'error';
             $message = session('error');
-            $title = 'Error';
+            $title = session('title') ?? 'Error';
         } elseif (session()->has('warning')) {
             $variant = 'warning';
             $message = session('warning');
-            $title = 'Warning';
+            $title = session('title') ?? 'Warning';
         } elseif (session()->has('info')) {
             $variant = 'info';
             $message = session('info');
-            $title = 'Information';
+            $title = session('title') ?? 'Information';
         } elseif (session()->has('status')) {
             $variant = 'success'; // Default status to success/info style
             $message = session('status');
-            $title = 'Notification';
+            $title = session('title') ?? 'Notification';
         }
 
         // Copy styles from ui.alert

@@ -21,24 +21,7 @@
             </nav>
         </div>
 
-        <!-- Alert -->
-        @if (session('success'))
-            <div class="mb-6 flex w-full rounded-lg border-l-6 border-success-500 bg-success-500/10 px-7 py-4 shadow-md dark:bg-[#1B2B20] md:p-6">
-                <div class="mr-5 flex h-9 w-9 items-center justify-center rounded-lg bg-success-500">
-                    <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15.2984 0.826822L15.2867 0.811822C14.7264 0.257759 13.8182 0.253452 13.2543 0.811822L13.2506 0.815572L6.10729 7.95892L2.74759 4.59922L2.74392 4.59554C2.18124 4.03717 1.27298 4.03717 0.710351 4.59554C0.148964 5.1524 0.148964 6.05622 0.710351 6.61308L0.714024 6.61676L5.08385 10.9866L5.08752 10.9903C5.64617 11.5443 6.55445 11.5486 7.11834 10.9903L7.12201 10.9866L15.2911 2.81754C15.8525 2.26067 15.8525 1.35685 15.2911 0.800041L15.2984 0.826822Z" fill="white" />
-                    </svg>
-                </div>
-                <div class="w-full">
-                    <h5 class="mb-2 text-lg font-semibold text-success-800 dark:text-[#34D399]">
-                        Successfully
-                    </h5>
-                    <p class="text-sm text-success-700 dark:text-[#34D399]">
-                        {{ session('success') }}
-                    </p>
-                </div>
-            </div>
-        @endif
+        <!-- Alert (Moved to Toast) -->
 
         <!-- Table Section -->
         <div class="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">

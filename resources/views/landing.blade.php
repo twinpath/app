@@ -7,7 +7,6 @@
 <script>
     // Define global scroll function immediately
     window.appSmoothScroll = function(selector) {
-        console.log('[App] Attempting to scroll to:', selector);
         const element = document.querySelector(selector);
         
         if (!element) {
@@ -19,7 +18,6 @@
         const elementPosition = element.getBoundingClientRect().top;
         const offsetPosition = elementPosition + window.pageYOffset - navbarOffset;
 
-        console.log('[App] Calculated offset:', offsetPosition);
 
         window.scrollTo({
             top: offsetPosition,
@@ -30,7 +28,6 @@
         setTimeout(() => {
             if (window.location.hash) {
                 history.replaceState(null, null, window.location.pathname);
-                console.log('[App] URL cleaned');
             }
         }, 500);
     };
@@ -38,7 +35,6 @@
     // Handle initial hash
     window.addEventListener('DOMContentLoaded', () => {
         if (window.location.hash) {
-            console.log('[App] Initial hash detected:', window.location.hash);
             setTimeout(() => window.appSmoothScroll(window.location.hash), 500);
         }
     });

@@ -39,18 +39,15 @@
                 
                 const setupEcho = () => {
                     if (window.Echo) {
-                        console.log('Echo detected, joining private channel user.{{ auth()->id() }}');
                         const channel = window.Echo.private('user.{{ auth()->id() }}');
                         
                         channel.listen('DashboardStatsUpdated', (e) => {
-                                console.log('Dashboard stats updated event received');
                                 this.fetchStats();
                             })
                             .listen('.PingResponse', (e) => {
                                 if (this.pingStartTime) {
                                     const end = performance.now();
                                     this.latency = Math.round(end - this.pingStartTime) + 'ms';
-                                    console.log('WebSocket Latency received:', this.latency);
                                     this.pingStartTime = null;
                                 }
                             });
@@ -58,7 +55,6 @@
                         const updateStatus = () => {
                             if (window.Echo.connector && window.Echo.connector.pusher) {
                                 const state = window.Echo.connector.pusher.connection.state;
-                                console.log('WebSocket Connection State:', state);
                                 this.status = state;
                                 if (state === 'connected') {
                                     this.measureLatency();
@@ -72,7 +68,6 @@
                         };
 
                         window.Echo.connector.pusher.connection.bind('state_change', (states) => {
-                            console.log('State change:', states.previous, '->', states.current);
                             updateStatus();
                         });
                         

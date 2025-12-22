@@ -120,7 +120,8 @@
     window.addEventListener('resize', checkMobile);">
 
     {{-- Flash Message Component --}}
-    <x-ui.flash-message />
+    {{-- Flash Message Component (Integrated into Realtime Toast) --}}
+    {{-- <x-ui.flash-message /> --}}
 
     {{-- Real-time Toast Component --}}
     <x-ui.realtime-toast />

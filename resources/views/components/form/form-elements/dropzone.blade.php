@@ -15,7 +15,6 @@
                 
                 if (validFiles.length > 0) {
                     this.files = [...this.files, ...validFiles];
-                    console.log('Files uploaded:', validFiles);
                     
                     // Here you can add logic to upload files to server
                     this.uploadFiles(validFiles);
@@ -24,7 +23,6 @@
             uploadFiles(files) {
                 // Implement your file upload logic here
                 // Example: Use FormData and fetch/axios to upload
-                console.log('Uploading files:', files);
             },
             removeFile(index) {
                 this.files.splice(index, 1);
