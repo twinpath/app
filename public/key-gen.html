@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laravel Key Generator | DyDev Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#3C50E0',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      [x-cloak] { display: none !important; }
+    </style>
+  </head>
+  <body
+    x-data="{ 
+      darkMode: false, 
+      generatedKey: '',
+      copied: false,
+      generateKey() {
+        const array = new Uint8Array(32);
+        window.crypto.getRandomValues(array);
+        const binary = String.fromCharCode.apply(null, array);
+        this.generatedKey = 'base64:' + btoa(binary);
+        this.copied = false;
+      },
+      copyToClipboard() {
+        if (!this.generatedKey) return;
+        navigator.clipboard.writeText(this.generatedKey);
+        this.copied = true;
+        setTimeout(() => this.copied = false, 2000);
+      }
+    }"
+    x-init="
+      darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
+      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+      generateKey();
+    "
+    :class="{'dark bg-gray-900': darkMode === true}"
+    class="bg-gray-50 text-gray-800 transition-colors duration-300"
+  >
+    <div class="relative z-1 flex min-h-screen flex-col items-center justify-center overflow-hidden p-6">
+      <!-- Decoration -->
+      <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <svg class="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" stroke-width="0.1"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      <!-- Main Content -->
+      <div class="mx-auto w-full max-w-[500px] text-center bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 relative z-10">
+        <div class="flex justify-between items-center mb-6">
+          <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
+            Key Generator
+          </h1>
+          <button 
+            @click="darkMode = !darkMode" 
+            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <template x-if="!darkMode">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </template>
+            <template x-if="darkMode">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.95 16.95l.707.707M7.05 7.05l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+            </template>
+          </button>
+        </div>
+
+        <p class="mb-8 text-gray-600 dark:text-gray-400">
+          Generate a secure 32-byte <strong>APP_KEY</strong> for your <code>.env</code> file.
+        </p>
+
+        <div class="relative mb-6">
+          <div 
+            class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 font-mono text-sm break-all text-primary dark:text-blue-400 min-h-[60px] flex items-center justify-center"
+            x-text="generatedKey"
+          ></div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button
+            @click="generateKey()"
+            class="flex-1 inline-flex items-center justify-center rounded-lg bg-gray-100 px-5 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 transition-all"
+          >
+            New Key
+          </button>
+          <button
+            @click="copyToClipboard()"
+            class="flex-1 inline-flex items-center justify-center rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-opacity-90 shadow-md transition-all active:scale-95"
+          >
+            <span x-show="!copied">Copy Key</span>
+            <span x-show="copied" x-cloak>Copied!</span>
+          </button>
+        </div>
+        
+        <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 text-left">
+          <h3 class="text-sm font-semibold text-gray-800 dark:text-white mb-2">How to use:</h3>
+          <ol class="text-xs text-gray-500 dark:text-gray-400 space-y-2 list-decimal ml-4">
+            <li>Copy the generated key above.</li>
+            <li>Open your <code>.env</code> file on your server.</li>
+            <li>Find <code>APP_KEY=</code> and paste the key.</li>
+            <li>Save the file.</li>
+          </ol>
+        </div>
+      </div>
+
+      <p class="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-sm text-gray-500 dark:text-gray-400">
+        &copy; 2025 - DyDev TrustLab
+      </p>
+    </div>
+  </body>
+</html>
