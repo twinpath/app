@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Telegram Chat ID Finder | DyDev Admin</title>
+    <meta name="description" content="Find your Telegram Chat ID using your Bot Token. Secure client-side tool to find personal or group chat IDs easily.">
+    <meta name="keywords" content="telegram chat id finder, find chat id, telegram bot api, bot token chat id">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Telegram Chat ID Finder | DyDev Admin">
+    <meta property="og:description" content="Quickly find your Telegram Chat ID for automated deployments and notifications.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/images/og-share.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Telegram Chat ID Finder | DyDev Admin">
+    <meta name="twitter:description" content="Quickly find your Telegram Chat ID for automated deployments and notifications.">
+    <meta name="twitter:image" content="/images/og-share.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#3C50E0',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      [x-cloak] { display: none !important; }
+      @keyframes pulse-soft {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      .animate-pulse-soft { animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+  </head>
+  <body
+    x-data="{ 
+      darkMode: false, 
+      botToken: '',
+      chats: [],
+      loading: false,
+      error: '',
+      copiedId: null,
+      async findChats() {
+        if (!this.botToken) {
+            this.error = 'Please enter a Bot Token';
+            return;
+        }
+        
+        this.loading = true;
+        this.error = '';
+        this.chats = [];
+        
+        try {
+            const response = await fetch(`https://api.telegram.org/bot${this.botToken}/getUpdates`);
+            const data = await response.json();
+            
+            if (!data.ok) {
+                this.error = data.description || 'Invalid token or API error';
+                return;
+            }
+            
+            if (data.result.length === 0) {
+                this.error = 'No recent messages found. Please send a message to your bot first!';
+                return;
+            }
+            
+            // Extract unique chats
+            const uniqueChats = {};
+            data.result.forEach(update => {
+                const message = update.message || update.edited_message || update.callback_query?.message;
+                if (message && message.chat) {
+                    uniqueChats[message.chat.id] = {
+                        id: message.chat.id,
+                        name: message.chat.title || message.chat.first_name || 'Group/Channel',
+                        username: message.chat.username ? `@${message.chat.username}` : 'N/A',
+                        type: message.chat.type
+                    };
+                }
+            });
+            
+            this.chats = Object.values(uniqueChats);
+            
+            if (this.chats.length === 0) {
+                this.error = 'Could not find any chat information in recent updates.';
+            }
+        } catch (err) {
+            this.error = 'Network error. Please check your connection.';
+            console.error(err);
+        } finally {
+            this.loading = false;
+        }
+      },
+      copyToClipboard(text, id) {
+        navigator.clipboard.writeText(text);
+        this.copiedId = id;
+        setTimeout(() => this.copiedId = null, 2000);
+      }
+    }"
+    x-init="
+      darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
+      $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)));
+    "
+    :class="{'dark bg-gray-900': darkMode === true}"
+    class="bg-gray-50 text-gray-800 transition-colors duration-300"
+  >
+    <div class="relative z-1 flex min-h-screen flex-col items-center justify-start overflow-hidden p-6 md:pt-20">
+      <!-- Back to Home -->
+      <div class="w-full max-w-[600px] mb-4">
+          <a href="/" class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+              <svg class="mr-2" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor">
+                  <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Back to home
+          </a>
+      </div>
+
+      <!-- Decoration -->
+      <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <svg class="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" stroke-width="0.1"/>
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      <!-- Main Content -->
+      <div class="mx-auto w-full max-w-[600px] bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 relative z-10">
+        <div class="flex justify-between items-center mb-6">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-primary rounded-lg text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">
+                Telegram Chat ID Finder
+            </h1>
+          </div>
+          <button 
+            @click="darkMode = !darkMode" 
+            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+          >
+            <template x-if="!darkMode">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </template>
+            <template x-if="darkMode">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.95 16.95l.707.707M7.05 7.05l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+            </template>
+          </button>
+        </div>
+
+        <p class="mb-8 text-sm text-gray-600 dark:text-gray-400 text-left">
+          Enter your <strong>Bot Token</strong> from @BotFather to see recent activity and find your <code>CHAT_ID</code>.
+        </p>
+
+        <div class="space-y-4 mb-8">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-left">Telegram Bot Token</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        x-model="botToken"
+                        placeholder="123456789:ABCDE..."
+                        class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 font-mono text-sm text-primary dark:text-blue-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        @keydown.enter="findChats()"
+                    />
+                    <button 
+                        @click="findChats()"
+                        class="absolute right-2 top-2 bottom-2 px-4 bg-primary text-white text-xs font-bold rounded-lg hover:bg-opacity-90 transition-all flex items-center justify-center gap-2"
+                        :disabled="loading"
+                    >
+                        <span x-show="!loading">Get Updates</span>
+                        <svg x-show="loading" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div x-show="error" x-cloak class="mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm text-left flex gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span x-text="error"></span>
+        </div>
+
+        <!-- Results Table -->
+        <div x-show="chats.length > 0" x-cloak class="space-y-4">
+            <h3 class="text-sm font-semibold text-gray-800 dark:text-white text-left">Detected Chat IDs:</h3>
+            <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-900/50">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">Name</th>
+                            <th class="px-4 py-3 font-semibold text-gray-600 dark:text-gray-400">ID</th>
+                            <th class="px-4 py-3 text-right"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <template x-for="chat in chats" :key="chat.id">
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
+                                <td class="px-4 py-4">
+                                    <div class="font-medium text-gray-800 dark:text-white" x-text="chat.name"></div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400" x-text="chat.username"></div>
+                                </td>
+                                <td class="px-4 py-4 font-mono text-primary dark:text-blue-400" x-text="chat.id"></td>
+                                <td class="px-4 py-4 text-right">
+                                    <button 
+                                        @click="copyToClipboard(chat.id, chat.id)"
+                                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-primary transition-all relative"
+                                    >
+                                        <svg x-show="copiedId !== chat.id" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                        <svg x-show="copiedId === chat.id" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 text-left">
+          <h3 class="text-xs font-bold text-gray-800 dark:text-white mb-2 uppercase tracking-tight">Instructions:</h3>
+          <ol class="text-xs text-gray-500 dark:text-gray-400 space-y-2 list-decimal ml-4">
+            <li>Send a random message (e.g., "Hello") to your Telegram Bot.</li>
+            <li>Paste your <strong>Bot Token</strong> above and click <strong>Get Updates</strong>.</li>
+            <li>Your <code>CHAT_ID</code> will appear in the table. Copy it and use it in your <code>deploy.sh</code> or <code>.env</code> file.</li>
+          </ol>
+        </div>
+      </div>
+
+      <p class="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
+        &copy; 2025 - DyDev TrustLab
+      </p>
+    </div>
+  </body>
+</html>

@@ -21,36 +21,70 @@ class MenuHelper
                 ],
             ],
             [
+                'name' => 'API Keys',
+                'icon' => 'api-key',
+                'route_name' => 'api-keys.index',
+            ],
+        ];
+    }
+
+    public static function getTemplateItems()
+    {
+        return [
+            [
                 'name' => 'Calendar',
                 'icon' => 'calendar',
-                'route_name' => 'calendar',
+                'route_name' => 'templates.calendar',
             ],
             [
                 'name' => 'Forms',
                 'icon' => 'forms',
                 'subItems' => [
-                    ['name' => 'Form Elements', 'route_name' => 'form-elements', 'pro' => false],
+                    ['name' => 'Form Elements', 'route_name' => 'templates.form-elements', 'pro' => false],
                 ],
             ],
             [
                 'name' => 'Tables',
                 'icon' => 'tables',
                 'subItems' => [
-                    ['name' => 'Basic Tables', 'route_name' => 'basic-tables', 'pro' => false]
+                    ['name' => 'Basic Tables', 'route_name' => 'templates.basic-tables', 'pro' => false]
                 ],
-            ],
-            [
-                'name' => 'API Keys',
-                'icon' => 'api-key',
-                'route_name' => 'api-keys.index',
             ],
             [
                 'name' => 'Pages',
                 'icon' => 'pages',
                 'subItems' => [
-                    ['name' => 'Blank Page', 'route_name' => 'blank', 'pro' => false],
+                    ['name' => 'Blank Page', 'route_name' => 'templates.blank', 'pro' => false],
                     ['name' => '404 Error', 'route_name' => 'error-404', 'pro' => false],
                     // ['name' => 'API Keys', 'route_name' => 'api-keys.index', 'pro' => false, 'new' => true]
+                ],
+            ],
+            [
+                'name' => 'Charts',
+                'icon' => 'charts',
+                'subItems' => [
+                    ['name' => 'Line Chart', 'route_name' => 'templates.line-chart', 'pro' => false],
+                    ['name' => 'Bar Chart', 'route_name' => 'templates.bar-chart', 'pro' => false]
+                ],
+            ],
+            [
+                'name' => 'UI Elements',
+                'icon' => 'ui-elements',
+                'subItems' => [
+                    ['name' => 'Alerts', 'route_name' => 'templates.alerts', 'pro' => false],
+                    ['name' => 'Avatar', 'route_name' => 'templates.avatars', 'pro' => false],
+                    ['name' => 'Badge', 'route_name' => 'templates.badges', 'pro' => false],
+                    ['name' => 'Buttons', 'route_name' => 'templates.buttons', 'pro' => false],
+                    ['name' => 'Images', 'route_name' => 'templates.images', 'pro' => false],
+                    ['name' => 'Videos', 'route_name' => 'templates.videos', 'pro' => false],
+                ],
+            ],
+            [
+                'name' => 'Authentication',
+                'icon' => 'authentication',
+                'subItems' => [
+                    ['name' => 'Sign In', 'route_name' => 'signin', 'pro' => false],
+                    ['name' => 'Sign Up', 'route_name' => 'signup', 'pro' => false],
                 ],
             ],
         ];
@@ -72,45 +106,34 @@ class MenuHelper
         ];
     }
 
-    public static function getOthersItems()
-    {
-        return [
-            [
-                'name' => 'Charts',
-                'icon' => 'charts',
-                'subItems' => [
-                    ['name' => 'Line Chart', 'route_name' => 'line-chart', 'pro' => false],
-                    ['name' => 'Bar Chart', 'route_name' => 'bar-chart', 'pro' => false]
-                ],
-            ],
-            [
-                'name' => 'UI Elements',
-                'icon' => 'ui-elements',
-                'subItems' => [
-                    ['name' => 'Alerts', 'route_name' => 'alerts', 'pro' => false],
-                    ['name' => 'Avatar', 'route_name' => 'avatars', 'pro' => false],
-                    ['name' => 'Badge', 'route_name' => 'badges', 'pro' => false],
-                    ['name' => 'Buttons', 'route_name' => 'buttons', 'pro' => false],
-                    ['name' => 'Images', 'route_name' => 'images', 'pro' => false],
-                    ['name' => 'Videos', 'route_name' => 'videos', 'pro' => false],
-                ],
-            ],
-            [
-                'name' => 'Authentication',
-                'icon' => 'authentication',
-                'subItems' => [
-                    ['name' => 'Sign In', 'route_name' => 'signin', 'pro' => false],
-                    ['name' => 'Sign Up', 'route_name' => 'signup', 'pro' => false],
-                ],
-            ],
-        ];
-    }
-
     public static function getMenuGroups()
     {
         $groups = [];
 
-        // Admin Menu
+        // Check if we are in the template section
+        if (request()->is('templates*')) {
+            $groups[] = [
+                'title' => 'Back',
+                'items' => [
+                    [
+                        'name' => 'Back to Dashboard',
+                        'icon' => 'dashboard', // Or an arrow icon if available
+                        'route_name' => 'dashboard',
+                    ]
+                ]
+            ];
+
+            $groups[] = [
+                'title' => 'Template Gallery',
+                'items' => self::getTemplateItems()
+            ];
+
+            return $groups;
+        }
+
+        // --- Main Admin/User Sidebar ---
+
+        // Admin Management
         if (auth()->check() && auth()->user()->isAdmin()) {
             $groups[] = [
                 'title' => 'Admin Management',
@@ -125,19 +148,45 @@ class MenuHelper
                         'icon' => 'certificate',
                         'route_name' => 'admin.root-ca.index',
                     ],
+                    [
+                        'name' => 'Ticket Management',
+                        'icon' => 'support-ticket',
+                        'route_name' => 'admin.tickets.index',
+                    ],
+                    [
+                        'name' => 'Legal Page Management',
+                        'icon' => 'pages',
+                        'route_name' => 'admin.legal-pages.index',
+                    ],
+                    [
+                        'name' => 'Inbox / Messages',
+                        'icon' => 'email',
+                        'route_name' => 'admin.contacts.index',
+                    ],
+                    [
+                        'name' => 'SMTP Tester',
+                        'icon' => 'server-settings',
+                        'route_name' => 'admin.smtp-tester.index',
+                    ],
                 ]
             ];
         }
 
-        // Filter Main Items based on role
+        // Standard Menus
+        // Filter Main Items based on role for non-admins (though getMainNavItems is now cleaner)
         $mainItems = self::getMainNavItems();
+        
+        // Add Support Tickets to Main Nav
+        $mainItems[] = [
+            'name' => 'Support Tickets',
+            'icon' => 'support-ticket',
+            'route_name' => 'support.index',
+        ];
+
         if (!auth()->check() || !auth()->user()->isAdmin()) {
-            $mainItems = array_values(array_filter($mainItems, function ($item) {
-                return in_array($item['name'], ['Dashboard', 'Certificate', 'API Keys']);
-            }));
+             // For customers, just show what's in mainItems (Dashboard, Certs, Keys, Support)
         }
 
-        // Standard Menus
         $groups[] = [
             'title' => 'Menu',
             'items' => $mainItems
@@ -147,12 +196,18 @@ class MenuHelper
             'title' => 'My Account',
             'items' => self::getMyAccountItems()
         ];
-
-        // Others - Admin Only
+        
+        // Link to Templates for Admins
         if (auth()->check() && auth()->user()->isAdmin()) {
             $groups[] = [
-                'title' => 'Others',
-                'items' => self::getOthersItems()
+                'title' => 'Development',
+                'items' => [
+                    [
+                        'name' => 'View Templates', 
+                        'icon' => 'pages', 
+                        'route_name' => 'templates.calendar'
+                    ]
+                ]
             ];
         }
 
@@ -215,6 +270,8 @@ class MenuHelper
             'email' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M3.5 8.187V17.25C3.5 17.6642 3.83579 18 4.25 18H19.75C20.1642 18 20.5 17.6642 20.5 17.25V8.18747L13.2873 13.2171C12.5141 13.7563 11.4866 13.7563 10.7134 13.2171L3.5 8.187ZM20.5 6.2286C20.5 6.23039 20.5 6.23218 20.5 6.23398V6.24336C20.4976 6.31753 20.4604 6.38643 20.3992 6.42905L12.4293 11.9867C12.1716 12.1664 11.8291 12.1664 11.5713 11.9867L3.60116 6.42885C3.538 6.38481 3.50035 6.31268 3.50032 6.23568C3.50028 6.10553 3.60577 6 3.73592 6H20.2644C20.3922 6 20.4963 6.10171 20.5 6.2286ZM22 6.25648V17.25C22 18.4926 20.9926 19.5 19.75 19.5H4.25C3.00736 19.5 2 18.4926 2 17.25V6.23398C2 6.22371 2.00021 6.2135 2.00061 6.20333C2.01781 5.25971 2.78812 4.5 3.73592 4.5H20.2644C21.2229 4.5 22 5.27697 22.0001 6.23549C22.0001 6.24249 22.0001 6.24949 22 6.25648Z" fill="currentColor"></path></svg>',
             
             'api-key' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 12C9.98528 12 12 9.98528 12 7.5C12 5.01472 9.98528 3 7.5 3C5.01472 3 3 5.01472 3 7.5C3 9.98528 5.01472 12 7.5 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 10.5L21 21L19.5 22.5L16.5 19.5L15 21L13.5 19.5L10.5 16.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+
+            'server-settings' => '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>',
 
         ];
 

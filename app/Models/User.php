@@ -50,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'role_id',
         'email',
+        'email_verified_at',
         'password',
         'avatar',
         'first_name',
@@ -151,5 +152,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function certificates()
     {
         return $this->hasMany(Certificate::class);
+    }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
     }
 }

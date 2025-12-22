@@ -17,6 +17,11 @@ class PageController extends Controller
         return view('pages.blank', ['title' => 'Blank']);
     }
 
+    public function landing()
+    {
+        return view('landing', ['title' => 'Home']);
+    }
+
     public function error404()
     {
         return view('pages.errors.error-404', ['title' => 'Error 404']);

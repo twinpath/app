@@ -41,6 +41,8 @@ class ApiKeyController extends Controller
             'key' => $key,
         ]);
 
+        \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
+
         return back()->with('success', 'API Key generated successfully.')
             ->with('generated_key', $key);
     }
@@ -52,6 +54,8 @@ class ApiKeyController extends Controller
         }
 
         $apiKey->delete();
+
+        \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
 
         return back()->with('success', 'API Key deleted successfully.');
     }
@@ -65,6 +69,8 @@ class ApiKeyController extends Controller
         $apiKey->update([
             'is_active' => !$apiKey->is_active
         ]);
+
+        \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
 
         if (request()->wantsJson()) {
             return response()->json(['success' => true, 'message' => 'API Key status updated successfully.']);
@@ -85,6 +91,8 @@ class ApiKeyController extends Controller
             'key' => $newKey,
             'last_used_at' => null, // Reset usage
         ]);
+
+        \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
 
         if (request()->wantsJson()) {
             return response()->json([

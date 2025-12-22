@@ -113,6 +113,9 @@
     {{-- Flash Message Component --}}
     <x-ui.flash-message />
 
+    {{-- Real-time Toast Component --}}
+    <x-ui.realtime-toast />
+
     {{-- preloader --}}
     <x-common.preloader/>
     {{-- preloader end --}}
@@ -137,6 +140,7 @@
 
     </div>
 
+    <x-ui.global-search />
 </body>
 
 @stack('scripts')

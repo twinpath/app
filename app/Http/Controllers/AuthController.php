@@ -76,10 +76,14 @@ class AuthController extends Controller
 
         $roleInfo = \App\Models\Role::where('name', 'customer')->first();
 
+        // Generate default avatar
+        $avatarPath = $this->generateDefaultAvatar($validated['fname'] . ' ' . ($validated['lname'] ?? ''), $validated['email']);
+
         $user = User::create([
             'first_name' => $validated['fname'],
             'last_name' => $validated['lname'],
             'email' => $validated['email'],
+            'avatar' => $avatarPath,
             'password' => Hash::make($validated['password']),
             'role_id' => $roleInfo ? $roleInfo->id : null,
         ]);
@@ -92,164 +96,101 @@ class AuthController extends Controller
     }
 
     /**
-     * Unified social redirect method
+     * Redirect to social provider
      */
     public function socialRedirect($provider, $context)
     {
-        // Store context in session for callback
         session(['social_auth_context' => $context]);
-        
+
         return Socialite::driver($provider)->redirect();
     }
 
     /**
-     * Unified social callback method
+     * Handle social provider callback
      */
-    public function socialCallback($provider)
+    public function socialCallback($provider, Request $request)
     {
-        if (request()->has('error')) {
-            \Log::info('Social auth error: ' . request()->get('error'));
-            return redirect()->route('signin')->with('error', 'Authentication failed or was cancelled.');
-        }
-
+        $context = session('social_auth_context', 'signin');
+        session()->forget('social_auth_context');
+        
         try {
             $socialUser = Socialite::driver($provider)->user();
-            \Log::info('Social user retrieved', ['provider' => $provider, 'email' => $socialUser->email]);
         } catch (\Exception $e) {
-            \Log::error('Socialite error: ' . $e->getMessage());
-            return redirect()->route('signin')->with('error', 'Failed to authenticate with ' . ucfirst($provider) . '.');
+            \Log::error("Social login failed for {$provider}: " . get_class($e) . ' - ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return redirect()->route('signin')->with('error', 'Authentication failed. Please try again.');
         }
 
-        $context = session('social_auth_context', 'signin');
-        \Log::info('Social auth context', ['context' => $context, 'is_authenticated' => Auth::check()]);
-        session()->forget('social_auth_context');
+        // Find user by social ID or email
+        $user = User::where($provider . '_id', $socialUser->getId())
+            ->orWhere('email', $socialUser->getEmail())
+            ->first();
 
-        // Handle 'connect' context - user wants to link social account
-        if ($context === 'connect') {
-            if (!Auth::check()) {
-                \Log::warning('Connect attempt without authentication');
-                return redirect()->route('signin')->with('error', 'Please sign in first to connect your social account.');
-            }
-            \Log::info('Handling social connect from settings');
-            return $this->connectSocialAccount($provider, $socialUser);
-        }
-
-        // If user is already authenticated (shouldn't happen for signin/signup)
-        if (Auth::check()) {
-            \Log::info('User already authenticated, treating as connect');
-            return $this->connectSocialAccount($provider, $socialUser);
-        }
-
-        // Handle based on context
-        if ($context === 'signin') {
-            \Log::info('Handling social signin');
-            return $this->handleSocialSignin($provider, $socialUser);
-        } else {
-            \Log::info('Handling social signup');
-            return $this->handleSocialSignup($provider, $socialUser);
-        }
-    }
-
-    /**
-     * Connect social account to existing authenticated user
-     */
-    protected function connectSocialAccount($provider, $socialUser)
-    {
-        $user = Auth::user();
-        
-        $updateData = [
-            $provider . '_id' => $socialUser->id,
-            $provider . '_token' => $socialUser->token,
-            $provider . '_refresh_token' => $socialUser->refreshToken,
-        ];
-
-        // Ensure update persists
-        $user->forceFill($updateData)->save();
-        
-        $this->recordLogin($user, $provider);
-        
-        \Log::info('Social account connected for user', ['user_id' => $user->id, 'provider' => $provider]);
-        
-        return redirect()->route('settings')->with('success', ucfirst($provider) . ' account connected successfully.');
-    }
-
-    /**
-     * Handle social signin (only for existing users)
-     */
-    protected function handleSocialSignin($provider, $socialUser)
-    {
-        // Try to find user by provider ID first
-        $user = User::where($provider . '_id', $socialUser->id)->first();
-
-        // If user not found by ID
-        if (!$user) {
-            // Check if user exists by email just to provide a helpful error message
-            if ($socialUser->email && User::where('email', $socialUser->email)->exists()) {
-                 $this->revokeSocialToken($provider, $socialUser->token);
-                 return redirect()->route('signin')->with('error', "An account with this email exists but is not connected to " . ucfirst($provider) . ". Please log in with your password and connect your social account from Settings.");
+        if ($user) {
+            // Context: Connect
+            if ($context === 'connect') {
+                if (Auth::check()) {
+                    $currentUser = Auth::user();
+                    if ($user->id !== $currentUser->id) {
+                        return redirect()->route('settings')->with('error', "This {$provider} account is already linked to another user.");
+                    }
+                }
             }
 
-            // Genuinely no account found
-            $this->revokeSocialToken($provider, $socialUser->token);
-            return redirect()->route('signin')->with('error', 'No account found with this ' . ucfirst($provider) . ' account. Please sign up first.');
-        }
-
-        // Proceed with login for connected user
-
-        // Update login tracking
-
-
-        $this->recordLogin($user, $provider);
-
-        Auth::login($user);
-
-        return redirect()->route('dashboard');
-    }
-
-    /**
-     * Handle social signup (only for new users)
-     */
-    protected function handleSocialSignup($provider, $socialUser)
-    {
-        // Check if user already exists by email
-        $existingUser = User::where('email', $socialUser->email)->first();
-
-        if ($existingUser) {
-            return redirect()->route('signup')->withErrors([
-                'email' => 'An account with this email already exists. Please sign in instead.',
+            // Update social tokens/ID if not set or changed
+            $user->update([
+                $provider . '_id' => $socialUser->getId(),
+                $provider . '_token' => $socialUser->token,
+                $provider . '_refresh_token' => $socialUser->refreshToken ?? $user->{$provider . '_refresh_token'},
+                'email_verified_at' => $user->email_verified_at ?? now(), // Auto-verify if not already
             ]);
+
+            // Login user if not already auth or if in auth context
+            if ($context !== 'connect') {
+                Auth::login($user);
+                $this->recordLogin($user, $provider);
+                return redirect()->intended('dashboard');
+            }
+
+            return redirect()->route('settings')->with('success', "{$provider} account connected successfully.");
+        } else {
+            // New User or Connect (but account doesn't exist)
+            
+            if ($context === 'connect' && Auth::check()) {
+                $user = Auth::user();
+                $user->update([
+                    $provider . '_id' => $socialUser->getId(),
+                    $provider . '_token' => $socialUser->token,
+                    $provider . '_refresh_token' => $socialUser->refreshToken,
+                ]);
+                return redirect()->route('settings')->with('success', "{$provider} account connected successfully.");
+            }
+
+            if ($context === 'signin') {
+                return redirect()->route('signin')->with('error', 'No account found with this email. Please sign up first.');
+            }
+
+            // Signup flow - Store in session and redirect to password setup
+            $nameParts = explode(' ', $socialUser->getName() ?? '', 2);
+            $firstName = $nameParts[0] ?? '';
+            $lastName = $nameParts[1] ?? '';
+            
+            $avatarPath = $this->downloadSocialAvatar($socialUser->getAvatar(), $socialUser->getEmail());
+
+            session([
+                'needs_password_setup' => true,
+                'social_signup_provider' => $provider,
+                'social_signup_email' => $socialUser->getEmail(),
+                'social_signup_first_name' => $firstName,
+                'social_signup_last_name' => $lastName,
+                'social_signup_avatar_path' => $avatarPath,
+                'social_signup_provider_id' => $socialUser->getId(),
+                'social_signup_provider_token' => $socialUser->token,
+                'social_signup_provider_refresh_token' => $socialUser->refreshToken ?? null,
+            ]);
+
+            return redirect()->route('setup-password');
         }
-
-        // Download and save avatar
-        $avatarPath = null;
-        if ($socialUser->avatar) {
-            $avatarPath = $this->downloadSocialAvatar($socialUser->avatar, $socialUser->email);
-        }
-
-        // Parse name
-        $nameParts = explode(' ', $socialUser->name ?? $socialUser->email, 2);
-        $firstName = $nameParts[0];
-        $lastName = $nameParts[1] ?? '';
-
-        // Store user data in session for password setup
-        session([
-            'needs_password_setup' => true,
-            'social_signup_provider' => $provider,
-            'social_signup_name' => $socialUser->name ?? $socialUser->email,
-            'social_signup_email' => $socialUser->email,
-            'social_signup_first_name' => $firstName,
-            'social_signup_last_name' => $lastName,
-            'social_signup_avatar' => $avatarPath ? asset('storage/' . $avatarPath) : null,
-            'social_signup_avatar_path' => $avatarPath,
-            'social_signup_provider_id' => $socialUser->id,
-            'social_signup_provider_token' => $socialUser->token,
-            'social_signup_provider_refresh_token' => $socialUser->refreshToken,
-        ]);
-
-        \Log::info('Social signup - redirecting to password setup', ['email' => $socialUser->email]);
-
-        // Redirect to password setup page
-        return redirect()->route('setup-password');
     }
 
     /**
@@ -265,7 +206,10 @@ class AuthController extends Controller
             $imageContent = file_get_contents($avatarUrl);
             
             if ($imageContent === false) {
-                return null;
+                // Determine name for fallback
+                // We don't have the name here easily, so we use email part
+                $name = explode('@', $userEmail)[0];
+                return $this->generateDefaultAvatar($name, $userEmail);
             }
 
             // Save to storage
@@ -273,9 +217,26 @@ class AuthController extends Controller
             
             return $filename;
         } catch (\Exception $e) {
-            // If download fails, return null (user will have default avatar)
+            // If download fails, return generated avatar
             \Log::error('Failed to download social avatar: ' . $e->getMessage());
-            return null;
+            $name = explode('@', $userEmail)[0];
+            return $this->generateDefaultAvatar($name, $userEmail);
+        }
+    }
+
+    /**
+     * Generate default avatar using Laravolt
+     */
+    protected function generateDefaultAvatar($name, $email)
+    {
+        try {
+            $filename = 'avatars/' . Str::slug($email) . '_' . time() . '.png';
+            $avatar = \Laravolt\Avatar\Facade::create($name)->getImageObject()->encode(new \Intervention\Image\Encoders\PngEncoder());
+            Storage::disk('public')->put($filename, $avatar);
+            return $filename;
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate default avatar: ' . $e->getMessage());
+            return null; // Ultimate fallback to null
         }
     }
 
@@ -330,6 +291,7 @@ class AuthController extends Controller
             $provider . '_id' => $providerId,
             $provider . '_token' => $providerToken,
             $provider . '_refresh_token' => $providerRefreshToken,
+            'email_verified_at' => now(), // Auto-verify email from trusted social provider
         ]);
 
         $this->recordLogin($user, $provider);

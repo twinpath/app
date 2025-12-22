@@ -37,6 +37,9 @@ class CheckApiKey
         // Update last used timestamp
         $apiKey->update(['last_used_at' => now()]);
 
+        // Real-time update dashboard
+        \App\Events\DashboardStatsUpdated::dispatch($apiKey->user_id);
+
         // Put the user in the request context
         $request->merge(['authenticated_user' => $apiKey->user]);
         

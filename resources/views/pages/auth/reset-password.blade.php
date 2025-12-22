@@ -1,4 +1,6 @@
-@extends('layouts.fullscreen-layout')
+@extends('layouts.fullscreen-layout', ['title' => 'Set New Password'])
+
+@section('robots', 'noindex, nofollow')
 
 @section('content')
     <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
@@ -13,7 +15,7 @@
                             <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="" stroke-width="1.5"
                                 stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                        Back to Home
+                        Back to home
                     </a>
                 </div>
                 <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
@@ -108,7 +110,7 @@
                             <img src="{{ asset('images/logo/auth-logo.svg') }}" alt="Logo" />
                         </a>
                          <p class="text-center text-gray-400 dark:text-white/60">
-                            Free and Open-Source Tailwind CSS Admin Dashboard Template
+                            Professional Certificate Authority & API Management System
                         </p>
                     </div>
                 </div>

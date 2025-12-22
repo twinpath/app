@@ -1,24 +1,125 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="space-y-6" x-data="{
-    loading: false,
-    latency: '---',
-    async refreshDashboard() {
-        this.loading = true;
-        window.location.reload();
-    },
-    async measureLatency() {
-        const start = performance.now();
-        try {
-            await fetch(window.location.origin + '/ping', { method: 'HEAD', cache: 'no-cache' });
-            const end = performance.now();
-            this.latency = Math.round(end - start) + 'ms';
-        } catch (e) {
-            this.latency = 'Offline';
+<div class="space-y-6" x-data="dashboardData()">
+@push('scripts')
+<script>
+    function dashboardData() {
+        return {
+            loading: false,
+            latency: '---',
+            status: 'connecting',
+            stats: {
+                totalCertificates: {{ $totalCertificates }},
+                activeCertificates: {{ $activeCertificates }},
+                totalApiKeys: {{ $totalApiKeys }},
+                expiringSoonCount: {{ $expiringSoonCount }},
+                recentCertificates: @json($recentCertificates),
+                recentApiActivity: @json($recentApiActivity),
+                months: @json($months),
+                issuanceData: @json($issuanceData),
+                maxIssuance: {{ max($issuanceData) ?: 1 }}
+            },
+            async refreshDashboard() {
+                this.loading = true;
+                await this.fetchStats();
+                this.loading = false;
+            },
+            async fetchStats() {
+                try {
+                    const response = await fetch('{{ route('dashboard.stats') }}');
+                    const data = await response.json();
+                    this.stats = data;
+                } catch (e) {
+                    console.error('Failed to fetch stats:', e);
+                }
+            },
+            init() {
+                this.status = 'searching';
+                
+                const setupEcho = () => {
+                    if (window.Echo) {
+                        console.log('Echo detected, joining private channel user.{{ auth()->id() }}');
+                        const channel = window.Echo.private('user.{{ auth()->id() }}');
+                        
+                        channel.listen('DashboardStatsUpdated', (e) => {
+                                console.log('Dashboard stats updated event received');
+                                this.fetchStats();
+                            })
+                            .listen('.PingResponse', (e) => {
+                                if (this.pingStartTime) {
+                                    const end = performance.now();
+                                    this.latency = Math.round(end - this.pingStartTime) + 'ms';
+                                    console.log('WebSocket Latency received:', this.latency);
+                                    this.pingStartTime = null;
+                                }
+                            });
+
+                        const updateStatus = () => {
+                            if (window.Echo.connector && window.Echo.connector.pusher) {
+                                const state = window.Echo.connector.pusher.connection.state;
+                                console.log('WebSocket Connection State:', state);
+                                this.status = state;
+                                if (state === 'connected') {
+                                    this.measureLatency();
+                                } else {
+                                    this.latency = '---';
+                                }
+                            } else {
+                                console.warn('Echo connector or pusher not available');
+                                this.status = 'unavailable';
+                            }
+                        };
+
+                        window.Echo.connector.pusher.connection.bind('state_change', (states) => {
+                            console.log('State change:', states.previous, '->', states.current);
+                            updateStatus();
+                        });
+                        
+                        // Periodic refresh of latency if connected
+                        setInterval(() => {
+                            if (this.status === 'connected') {
+                                this.measureLatency();
+                            }
+                        }, 5000);
+
+                        updateStatus();
+                        return true;
+                    }
+                    return false;
+                };
+
+                // Try immediately
+                if (!setupEcho()) {
+                    // Try again every 500ms for up to 5 seconds
+                    let attempts = 0;
+                    const interval = setInterval(() => {
+                        attempts++;
+                        if (setupEcho() || attempts > 10) {
+                            clearInterval(interval);
+                            if (!window.Echo) {
+                                console.error('Laravel Echo not found after 5 seconds');
+                                this.status = 'unavailable';
+                            }
+                        }
+                    }, 500);
+                }
+            },
+            pingStartTime: null,
+            async measureLatency() {
+                this.pingStartTime = performance.now();
+                try {
+                    // Trigger a WebSocket round-trip via a lightweight endpoint
+                    await fetch('{{ route('dashboard.ping') }}', { cache: 'no-cache' });
+                } catch (e) {
+                    this.latency = 'Offline';
+                    this.pingStartTime = null;
+                }
+            }
         }
     }
-}" x-init="measureLatency(); setInterval(() => measureLatency(), 5000)">
+</script>
+@endpush
     <!-- Top Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -50,12 +151,12 @@
             </div>
             <div class="flex flex-col">
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Certificates</span>
-                <span class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ $totalCertificates }}</span>
+                <span class="text-3xl font-bold text-gray-900 dark:text-white mt-1" x-text="stats.totalCertificates">{{ $totalCertificates }}</span>
                 <span class="text-xs text-green-500 flex items-center gap-1 mt-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M12.395 6.227a.75.75 0 011.082.022l3.992 4.497a.75.75 0 01-1.104 1.012l-3.469-3.908-4.496 3.992a.75.75 0 01-1.012-1.104l5.007-4.511z" clip-rule="evenodd" />
                     </svg>
-                    {{ $activeCertificates }} Active Now
+                    <span x-text="stats.activeCertificates">{{ $activeCertificates }}</span> Active Now
                 </span>
             </div>
         </div>
@@ -69,9 +170,9 @@
             </div>
             <div class="flex flex-col">
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Manageable API Keys</span>
-                <span class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ $totalApiKeys }}</span>
+                <span class="text-3xl font-bold text-gray-900 dark:text-white mt-1" x-text="stats.totalApiKeys">{{ $totalApiKeys }}</span>
                 <span class="text-xs text-blue-500 flex items-center gap-1 mt-2">
-                    Latest usage: {{ $recentApiActivity->first()->last_used_at?->diffForHumans() ?? 'None' }}
+                    Latest usage: <span x-text="stats.recentApiActivity[0]?.last_used_diff || 'None'">{{ $recentApiActivity->first()?->last_used_at?->diffForHumans() ?? 'None' }}</span>
                 </span>
             </div>
         </div>
@@ -85,7 +186,7 @@
             </div>
             <div class="flex flex-col">
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Expiring Soon</span>
-                <span class="text-3xl font-bold text-gray-900 dark:text-white mt-1">{{ $expiringSoonCount }}</span>
+                <span class="text-3xl font-bold text-gray-900 dark:text-white mt-1" x-text="stats.expiringSoonCount">{{ $expiringSoonCount }}</span>
                 <span class="text-xs text-orange-500 flex items-center gap-1 mt-2">
                     Action required within 14 days
                 </span>
@@ -101,7 +202,16 @@
             </div>
             <div class="flex flex-col">
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Node Status</span>
-                <span class="text-3xl font-bold mt-1" :class="latency === 'Offline' ? 'text-red-500' : 'text-green-500'" x-text="latency === 'Offline' ? 'Offline' : 'Operational'">Operational</span>
+                <span class="text-3xl font-bold mt-1" 
+                      :class="{
+                          'text-green-500': status === 'connected',
+                          'text-yellow-500': status === 'connecting' || status === 'searching',
+                          'text-red-500': status === 'offline' || status === 'unavailable' || status === 'failed'
+                      }" 
+                      x-text="status === 'connected' ? 'Operational' : 
+                             (status === 'connecting' ? 'Connecting...' : 
+                             (status === 'searching' ? 'Initializing...' :
+                             (status === 'unavailable' ? 'Echo Missing' : 'Offline')))">Operational</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-2">
                     Latency: <span x-text="latency"></span>
                 </span>
@@ -119,23 +229,18 @@
             </div>
             
             <div class="flex-1 flex items-end justify-between gap-2 min-h-[200px] px-2">
-                @foreach($issuanceData as $index => $count)
+                <template x-for="(count, index) in stats.issuanceData" :key="index">
                     <div class="flex-1 flex flex-col items-center gap-2 group">
                         <div class="relative w-full flex items-end justify-center">
-                            @php 
-                                $max = max($issuanceData) ?: 1;
-                                $percentage = ($count / $max) * 100;
-                            @endphp
                             <div class="w-full max-w-[40px] bg-brand-500/20 dark:bg-brand-500/10 rounded-t-lg group-hover:bg-brand-500/30 transition-all cursor-pointer relative" 
-                                 style="height: {{ max($percentage, 5) }}%;">
-                                <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {{ $count }}
+                                 :style="'height: ' + Math.max((count / stats.maxIssuance) * 100, 5) + '%;'">
+                                <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-700 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity" x-text="count">
                                 </div>
                             </div>
                         </div>
-                        <span class="text-[10px] font-bold text-gray-400 uppercase">{{ $months[$index] }}</span>
+                        <span class="text-[10px] font-bold text-gray-400 uppercase" x-text="stats.months[index]"></span>
                     </div>
-                @endforeach
+                </template>
             </div>
         </div>
 
@@ -143,23 +248,22 @@
         <div class="lg:col-span-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
             <h3 class="font-bold text-gray-900 dark:text-white mb-6">Recent API Activity</h3>
             <div class="space-y-4">
-                @forelse($recentApiActivity as $activity)
+                <template x-for="activity in stats.recentApiActivity" :key="activity.name + activity.last_used_diff">
                     <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700">
                         <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11.536 11 9 13.536 7.464 12 4.929 14.536V17h2.472l4.243-4.243a6 6 0 018.828-5.743zM16.5 13.5V18h6v-4.5h-6z" />
-                        </svg>
+                            </svg>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate">{{ $activity->name }}</p>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Used {{ $activity->last_used_at->diffForHumans() }}</p>
+                            <p class="text-sm font-semibold text-gray-900 dark:text-white truncate" x-text="activity.name"></p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5" x-text="'Used ' + activity.last_used_diff"></p>
                         </div>
                     </div>
-                @empty
-                    <div class="text-center py-6">
-                        <p class="text-sm text-gray-400">No recent activity detected.</p>
-                    </div>
-                @endforelse
+                </template>
+                <div x-show="stats.recentApiActivity.length === 0" class="text-center py-6">
+                    <p class="text-sm text-gray-400">No recent activity detected.</p>
+                </div>
             </div>
         </div>
 
@@ -167,7 +271,7 @@
         <div class="lg:col-span-12 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                 <h3 class="font-bold text-gray-900 dark:text-white">Recently Issued Certificates</h3>
-                <a href="#" class="text-xs font-bold text-brand-500 hover:text-brand-600 uppercase tracking-wider">View All</a>
+                <a href="{{ route('certificate.index') }}" class="text-xs font-bold text-brand-500 hover:text-brand-600 uppercase tracking-wider">View All</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -181,25 +285,21 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
-                        @forelse($recentCertificates as $cert)
+                        <template x-for="cert in stats.recentCertificates" :key="cert.common_name">
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                                <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{{ $cert->common_name }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $cert->organization }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $cert->created_at->format('M d, Y') }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $cert->valid_to->format('M d, Y') }}</td>
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white" x-text="cert.common_name"></td>
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400" x-text="cert.organization"></td>
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400" x-text="cert.created_at"></td>
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400" x-text="cert.valid_to"></td>
                                 <td class="px-6 py-4 text-right">
-                                    @if($cert->valid_to > now())
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 uppercase">Valid</span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 uppercase">Expired</span>
-                                    @endif
+                                    <span x-show="cert.is_valid" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 uppercase">Valid</span>
+                                    <span x-show="!cert.is_valid" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 uppercase">Expired</span>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No certificates found.</td>
-                            </tr>
-                        @endforelse
+                        </template>
+                        <tr x-show="stats.recentCertificates.length === 0">
+                            <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No certificates found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -207,3 +307,4 @@
     </div>
 </div>
 @endsection
+

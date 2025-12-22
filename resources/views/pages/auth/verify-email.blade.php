@@ -1,4 +1,6 @@
-@extends('layouts.fullscreen-layout')
+@extends('layouts.fullscreen-layout', ['title' => 'Verify Your Email'])
+
+@section('robots', 'noindex, nofollow')
 
 @section('content')
     <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
@@ -17,7 +19,9 @@
                                 </svg>
                             </span>
                             <p class="text-gray-700 dark:text-gray-400">
-                                Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you?
+                                Thanks for signing up! Before getting started, could you verify your email address 
+                                <span class="font-bold text-gray-900 dark:text-white">({{ auth()->user()->email }})</span> 
+                                by clicking on the link we just emailed to you?
                             </p>
                             <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
                                 If you didn't receive the email, we will gladly send you another.
@@ -56,7 +60,7 @@
                              <img src="{{ asset('images/logo/auth-logo.svg') }}" alt="Logo" />
                         </a>
                         <p class="text-center text-gray-400 dark:text-white/60">
-                            Secure Certificate Management System
+                            Professional Certificate Authority & API Management System
                         </p>
                     </div>
                 </div>

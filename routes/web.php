@@ -13,6 +13,8 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Admin\RootCaController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\TicketController;
 
 // Public API Routes
 Route::get('/api/public/ca-certificates', [\App\Http\Controllers\Api\PublicCaController::class, 'index'])->name('api.public.ca-certificates');
@@ -28,7 +30,7 @@ Route::get('/ping', function () {
 
 // authentication pages
 Route::middleware('guest')->group(function () {
-    Route::get('/', [AuthController::class, 'signin'])->name('home');
+    Route::get('/', [PageController::class, 'landing'])->name('home');
     Route::get('/signin', [AuthController::class, 'signin'])->name('signin');
     Route::post('/signin', [AuthController::class, 'authenticate']);
     Route::get('/signup', [AuthController::class, 'signup'])->name('signup');
@@ -70,6 +72,9 @@ Route::prefix('certificate')->name('certificate.')->group(function () {
     Route::get('/download-installer', [CertificateController::class, 'downloadInstaller'])->name('download-installer');
 });
 
+// Legal Pages
+Route::get('/legal/{slug}', [\App\Http\Controllers\LegalController::class, 'show'])->name('legal.show');
+
 // Email Verification (Public/Signed)
 Route::get('/email/verify/{id}/{hash}', [App\Http\Controllers\VerificationController::class, 'verify'])
     ->middleware(['signed', 'throttle:6,1'])
@@ -91,8 +96,18 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsActive::class])->gro
 
     // Authenticated & Verified Routes
     Route::middleware('verified')->group(function () {
+        // Notifications
+        Route::get('/notifications/unread', [\App\Http\Controllers\NotificationController::class, 'getUnread'])->name('notifications.unread');
+        Route::get('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+
+        // Global Search
+        Route::get('/search/global', [\App\Http\Controllers\SearchController::class, 'global'])->name('search.global');
+
         // dashboard pages
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/stats', [DashboardController::class, 'stats'])->name('dashboard.stats');
+        Route::get('/dashboard/ping', [DashboardController::class, 'ping'])->name('dashboard.ping');
 
         // Certificate routes
         Route::prefix('certificate')->name('certificate.')->group(function () {
@@ -108,33 +123,47 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsActive::class])->gro
             Route::delete('/{certificate:uuid}', [CertificateController::class, 'delete'])->name('delete');
         });
 
+        // Support Tickets (Customer)
+        Route::prefix('support')->name('support.')->group(function () {
+            Route::get('/', [TicketController::class, 'index'])->name('index');
+            Route::get('/create', [TicketController::class, 'create'])->name('create');
+            Route::post('/', [TicketController::class, 'store'])->name('store');
+            Route::get('/{ticket}', [TicketController::class, 'show'])->name('show');
+            Route::post('/{ticket}/reply', [TicketController::class, 'reply'])->name('reply');
+            Route::post('/{ticket}/close', [TicketController::class, 'close'])->name('close');
+        });
 
 
-        // Admin Only Pages (No Prefix)
+
+        // Admin Only Pages (No Prefix) -> Moved to Templates
         Route::middleware('admin')->group(function () {
-            // calender pages
-            Route::get('/calendar', [PageController::class, 'calendar'])->name('calendar');
+            
+            // Templates Group
+            Route::prefix('templates')->name('templates.')->group(function () {
+                // calender pages
+                Route::get('/calendar', [PageController::class, 'calendar'])->name('calendar');
 
-            // form pages
-            Route::get('/form-elements', [UiController::class, 'formElements'])->name('form-elements');
+                // form pages
+                Route::get('/form-elements', [UiController::class, 'formElements'])->name('form-elements');
 
-            // tables pages
-            Route::get('/basic-tables', [UiController::class, 'basicTables'])->name('basic-tables');
+                // tables pages
+                Route::get('/basic-tables', [UiController::class, 'basicTables'])->name('basic-tables');
 
-            // pages
-            Route::get('/blank', [PageController::class, 'blank'])->name('blank');
+                // pages
+                Route::get('/blank', [PageController::class, 'blank'])->name('blank');
 
-            // chart pages
-            Route::get('/line-chart', [ChartController::class, 'lineChart'])->name('line-chart');
-            Route::get('/bar-chart', [ChartController::class, 'barChart'])->name('bar-chart');
+                // chart pages
+                Route::get('/line-chart', [ChartController::class, 'lineChart'])->name('line-chart');
+                Route::get('/bar-chart', [ChartController::class, 'barChart'])->name('bar-chart');
 
-            // ui elements pages
-            Route::get('/alerts', [UiController::class, 'alerts'])->name('alerts');
-            Route::get('/avatars', [UiController::class, 'avatars'])->name('avatars');
-            Route::get('/badge', [UiController::class, 'badges'])->name('badges');
-            Route::get('/buttons', [UiController::class, 'buttons'])->name('buttons');
-            Route::get('/image', [UiController::class, 'images'])->name('images');
-            Route::get('/videos', [UiController::class, 'videos'])->name('videos');
+                // ui elements pages
+                Route::get('/alerts', [UiController::class, 'alerts'])->name('alerts');
+                Route::get('/avatars', [UiController::class, 'avatars'])->name('avatars');
+                Route::get('/badge', [UiController::class, 'badges'])->name('badges');
+                Route::get('/buttons', [UiController::class, 'buttons'])->name('buttons');
+                Route::get('/image', [UiController::class, 'images'])->name('images');
+                Route::get('/videos', [UiController::class, 'videos'])->name('videos');
+            });
         });
 
         // profile pages
@@ -162,17 +191,46 @@ Route::middleware(['auth', \App\Http\Middleware\EnsureUserIsActive::class])->gro
             Route::patch('/users/{user}/update-email', [App\Http\Controllers\UserManagementController::class, 'updateEmail'])->name('users.update-email');
             
             // Root CA Management
+            Route::post('/setup-ca', [RootCaController::class, 'setup'])->name('setup-ca');
             Route::get('/root-ca', [RootCaController::class, 'index'])->name('root-ca.index');
             Route::post('/root-ca/{certificate}/renew', [RootCaController::class, 'renew'])->name('root-ca.renew');
             
-            // Setup Route (Admin Only)
-            Route::post('/setup-ca', [CertificateController::class, 'setupCa'])->name('setup-ca'); 
+            // Legal Page Management
+            Route::get('/legal-pages', [App\Http\Controllers\Admin\LegalManagementController::class, 'index'])->name('legal-pages.index');
+            Route::get('/legal-pages/{legalPage}/edit', [App\Http\Controllers\Admin\LegalManagementController::class, 'edit'])->name('legal-pages.edit');
+            Route::put('/legal-pages/{legalPage}', [App\Http\Controllers\Admin\LegalManagementController::class, 'update'])->name('legal-pages.update');
+
+            // Contact Management
+            Route::get('/contacts', [App\Http\Controllers\Admin\ContactManagementController::class, 'index'])->name('contacts.index');
+            Route::get('/contacts/{contactSubmission}', [App\Http\Controllers\Admin\ContactManagementController::class, 'show'])->name('contacts.show');
+            Route::post('/contacts/{contactSubmission}/reply', [App\Http\Controllers\Admin\ContactManagementController::class, 'reply'])->name('contacts.reply');
+            Route::delete('/contacts/{contactSubmission}', [App\Http\Controllers\Admin\ContactManagementController::class, 'destroy'])->name('contacts.destroy');
+
+            // Ticket Management
+            Route::prefix('tickets')->name('tickets.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\TicketManagementController::class, 'index'])->name('index');
+                Route::get('/{ticket}', [App\Http\Controllers\Admin\TicketManagementController::class, 'show'])->name('show');
+                Route::post('/{ticket}/reply', [App\Http\Controllers\Admin\TicketManagementController::class, 'reply'])->name('reply');
+                Route::patch('/{ticket}/status', [App\Http\Controllers\Admin\TicketManagementController::class, 'updateStatus'])->name('update-status');
+            });
+
+            // SMTP Tester
+            Route::get('/smtp-tester', [\App\Http\Controllers\Admin\SmtpTesterController::class, 'index'])->name('smtp-tester.index');
+            Route::post('/smtp-tester/send', [\App\Http\Controllers\Admin\SmtpTesterController::class, 'send'])->name('smtp-tester.send');
         });
     });
 });
+
+// Public Contact Form
+Route::get('/contact', [ContactController::class, 'index'])->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Public Tools
+Route::get('/tools/chat-id-finder', [\App\Http\Controllers\ToolController::class, 'chatIdFinder'])->name('tools.chat-id-finder');
+Route::get('/tools/app-key-generator', [\App\Http\Controllers\ToolController::class, 'appKeyGenerator'])->name('tools.app-key-generator');
+Route::post('/tools/app-key-generator', [\App\Http\Controllers\ToolController::class, 'generateAppKey'])->name('tools.app-key-generator.generate');
 
 // Public / Error Pages
 Route::get('/error-404', [PageController::class, 'error404'])->name('error-404');
 
 Route::get('/php', [PageController::class, 'php']);
-

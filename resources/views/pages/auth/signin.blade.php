@@ -1,17 +1,20 @@
-@extends('layouts.fullscreen-layout')
+@extends('layouts.fullscreen-layout', ['title' => 'Sign In to Portal'])
+
+@section('meta_description', 'Access your Certificate Authority dashboard and manage your API keys and certificates securely.')
+@section('robots', 'noindex, nofollow')
 
 @section('content')
     <div class="relative z-1 bg-white p-6 sm:p-0 dark:bg-gray-900">
         <div class="relative flex h-screen w-full flex-col justify-center sm:p-0 lg:flex-row dark:bg-gray-900">
             <!-- Form -->
             <div class="flex w-full flex-1 flex-col lg:w-1/2">
-                <div class="mx-auto w-full max-w-md pt-10">
-                    <a href="{{ route('dashboard') }}"
+                <div class="mx-auto w-full max-w-md pt-5 sm:py-10">
+                    <a href="{{ route('home') }}"
                         class="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
                         <svg class="stroke-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                        Back to dashboard
+                        Back to home
                     </a>
                 </div>
                 <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
@@ -136,6 +139,12 @@
                                     Don't have an account?
                                     <a href="{{ route('signup') }}" class="text-brand-500 hover:text-brand-600 dark:text-brand-400">Sign Up</a>
                                 </p>
+                                <p class="mt-4 text-center text-xs text-gray-500 sm:text-start dark:text-gray-500">
+                                    By signing in, you agree to our 
+                                    <a href="{{ route('legal.show', 'terms-and-conditions') }}" class="underline hover:text-gray-700 dark:hover:text-gray-300">Terms</a> 
+                                    and 
+                                    <a href="{{ route('legal.show', 'privacy-policy') }}" class="underline hover:text-gray-700 dark:hover:text-gray-300">Privacy Policy</a>.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -151,7 +160,7 @@
                             <img src="./images/logo/auth-logo.svg" alt="Logo" />
                         </a>
                         <p class="text-center text-gray-400 dark:text-white/60">
-                            Free and Open-Source Tailwind CSS Admin Dashboard Template
+                            Professional Certificate Authority & API Management System
                         </p>
                     </div>
                 </div>

@@ -6,7 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Dashboard' }} | {{ config('app.name') }}</title>
+    <title>{{ $title ?? 'Unified Management' }} | {{ config('app.name', 'DyDev Admin') }}</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="@yield('meta_description', 'Professional Certificate Authority and API Management System for modern developers. Issue SSL/TLS certificates and manage API keys with ease.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'certificate authority, ssl manager, api key management, trustlab, security portal')">
+    <meta name="robots" content="@yield('robots', 'index, follow')">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $title ?? 'Unified Management' }} | {{ config('app.name', 'DyDev Admin') }}">
+    <meta property="og:description" content="@yield('meta_description', 'Professional Certificate Authority and API Management System for modern developers. Issue SSL/TLS certificates and manage API keys with ease.')">
+    <meta property="og:image" content="{{ asset('images/og-share.png') }}">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="{{ $title ?? 'Unified Management' }} | {{ config('app.name', 'DyDev Admin') }}">
+    <meta property="twitter:description" content="@yield('meta_description', 'Professional Certificate Authority and API Management System for modern developers. Issue SSL/TLS certificates and manage API keys with ease.')">
+    <meta property="twitter:image" content="{{ asset('images/og-share.png') }}">
+
+    @yield('meta')
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

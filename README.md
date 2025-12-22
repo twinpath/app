@@ -40,8 +40,8 @@ A robust, modern platform for managing Root CAs, Intermediate CAs, and Leaf Cert
 #### Option A: Terminal Access
 ```bash
 # Clone and enter
-git clone <your-repo-url>
-cd app-tail
+git clone https://github.com/twinpath/app.git
+cd app
 
 # Install dependencies
 composer install
@@ -119,6 +119,32 @@ Returns Root and Intermediate CA certificates in JSON format.
 ### Authenticated Certificates
 `GET /api/v1/certificates`
 Retrieves user-specific leaf certificates. Requires `X-API-KEY` header.
+
+## 🔄 CI/CD & Automated Deployment
+
+The project includes an automation script for seamless deployment on aaPanel:
+
+### 1. Script Setup
+1.  Locate `deploy.sh.example` and rename it to `deploy.sh` on your server.
+2.  Edit `deploy.sh` and provide your specific paths and Telegram credentials.
+3.  Make the script executable: `chmod +x deploy.sh`.
+
+### 2. aaPanel Webhook Integration
+1.  In aaPanel, install the **Webhook** app.
+2.  Create a new Webhook and paste the following command:
+    ```bash
+    /bin/bash /www/wwwroot/your-project-path/deploy.sh
+    ```
+3.  Copy the Webhook URL provided by aaPanel.
+
+### 3. GitHub Integration
+1.  Go to your GitHub repository **Settings > Webhooks**.
+2.  Click **Add webhook**.
+3.  Paste your aaPanel Webhook URL into the **Payload URL**.
+4.  Set **Content type** to `application/json`.
+5.  Select **Just the push event** and click **Add webhook**.
+
+Now, every time you push to the `main` branch, aaPanel will automatically pull the latest code, install dependencies, run migrations, and build assets.
 
 ## 📦 License
 Refer to the [LICENSE](LICENSE) file for details.

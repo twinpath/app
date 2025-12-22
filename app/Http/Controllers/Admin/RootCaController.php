@@ -10,6 +10,19 @@ use Illuminate\Support\Str;
 
 class RootCaController extends Controller
 {
+    public function setup()
+    {
+        if (CaCertificate::count() > 0) {
+            return redirect()->route('certificate.index')->with('error', 'CA already initialized.');
+        }
+
+        if (app(\App\Services\OpenSslService::class)->setupCa()) {
+            return redirect()->route('certificate.index')->with('success', 'Root and Intermediate CA successfully initialized.');
+        }
+
+        return redirect()->route('certificate.index')->with('error', 'Failed to initialize CA.');
+    }
+
     public function index()
     {
         $certificates = CaCertificate::all()->map(function($cert) {

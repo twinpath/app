@@ -23,7 +23,14 @@ class DatabaseSeeder extends Seeder
             ['label' => 'Customer']
         );
 
-        // Create Admin User
+        // Helper to generate avatar
+        $generateAvatar = function ($name, $email) {
+            $filename = 'avatars/' . \Illuminate\Support\Str::slug($email) . '_' . time() . '.png';
+            $avatar = \Laravolt\Avatar\Facade::create($name)->getImageObject()->encode(new \Intervention\Image\Encoders\PngEncoder());
+            \Illuminate\Support\Facades\Storage::disk('public')->put($filename, $avatar);
+            return $filename;
+        };
+
         // Create Admin User
         User::firstOrCreate(
             ['email' => 'admin@dyzulk.com'],
@@ -33,18 +40,20 @@ class DatabaseSeeder extends Seeder
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'role_id' => $adminRole->id,
                 'email_verified_at' => now(),
+                'avatar' => $generateAvatar('Admin User', 'admin@dyzulk.com'),
             ]
         );
 
         // Create Regular User
-        // Create Regular User
         User::firstOrCreate(
-            ['email' => 'test@example.com'],
+            ['email' => 'user@dyzulk.com'],
             [
-                'first_name' => 'Test',
-                'last_name' => 'User',
+                'first_name' => 'User',
+                'last_name' => 'Customer',
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
                 'role_id' => $customerRole->id,
+                'email_verified_at' => now(),
+                'avatar' => $generateAvatar('User Customer', 'user@dyzulk.com'),
             ]
         );
 
@@ -58,5 +67,8 @@ class DatabaseSeeder extends Seeder
         //         'role_id' => $customerRole->id,
         //     ]
         // );
+        $this->call([
+            LegalPageSeeder::class,
+        ]);
     }
 }

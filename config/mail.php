@@ -50,6 +50,21 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        'support' => [
+            'transport' => env('MAIL_SUPPORT_MAILER', 'smtp'),
+            'host' => env('MAIL_SUPPORT_HOST', '127.0.0.1'),
+            'port' => env('MAIL_SUPPORT_PORT', 2525),
+            'username' => env('MAIL_SUPPORT_USERNAME'),
+            'password' => env('MAIL_SUPPORT_PASSWORD'),
+            'encryption' => env('MAIL_SUPPORT_ENCRYPTION', 'tls'),
+            'from' => [
+                'address' => env('MAIL_SUPPORT_FROM_ADDRESS', 'support@lab.dyzulk.com'),
+                'name' => env('MAIL_SUPPORT_FROM_NAME', 'DyDev Support'),
+            ],
+            'timeout' => null,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

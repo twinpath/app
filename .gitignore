@@ -33,3 +33,15 @@ yarn-error.log*
 
 # Compiled assets
 mix-manifest.json
+
+# Local Deployment & Release
+/deploy.sh
+/zip-release.php
+/zip-stage.php
+/copy-release.php
+/make-release.bat
+/auth_backup.php
+/.idea
+/.vscode
+*.bak
+*.tmp

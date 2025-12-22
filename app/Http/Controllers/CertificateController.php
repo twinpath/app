@@ -252,6 +252,8 @@ BATCH;
                 'valid_to' => $result['valid_to'] ?? null,
             ]);
 
+            \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
+
             return redirect()->route('certificate.index')->with('success', 'Certificate generated successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
@@ -284,6 +286,8 @@ BATCH;
                 'valid_to' => $result['valid_to'] ?? null,
                 'created_at' => now(), // Refresh timestamp
             ]);
+
+            \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
 
             return redirect()->route('certificate.index')->with('success', 'Certificate regenerated successfully.');
         } catch (\Exception $e) {
@@ -348,6 +352,9 @@ BATCH;
     {
         $this->authorizeOwner($certificate);
         $certificate->delete();
+
+        \App\Events\DashboardStatsUpdated::dispatch(Auth::id());
+
         return redirect()->route('certificate.index')->with('success', 'Certificate deleted successfully.');
     }
 
