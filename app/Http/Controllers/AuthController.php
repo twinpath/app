@@ -29,7 +29,7 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
-            'cf-turnstile-response' => ['required', new \App\Rules\Turnstile],
+            'cf-turnstile-response' => ['required', new \RyanChandler\LaravelCloudflareTurnstile\Rules\Turnstile],
         ]);
 
         // Find user by email
@@ -73,7 +73,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'terms' => 'required|accepted',
-            'cf-turnstile-response' => ['required', new \App\Rules\Turnstile],
+            'cf-turnstile-response' => ['required', new \RyanChandler\LaravelCloudflareTurnstile\Rules\Turnstile],
         ]);
 
         $roleInfo = \App\Models\Role::where('name', 'customer')->first();

@@ -24,7 +24,7 @@ class ForgotPasswordController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'cf-turnstile-response' => ['required', new \App\Rules\Turnstile],
+            'cf-turnstile-response' => ['required', new \RyanChandler\LaravelCloudflareTurnstile\Rules\Turnstile],
         ]);
 
         // We will send the password reset link to this user. Once we have attempted

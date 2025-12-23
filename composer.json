@@ -15,7 +15,8 @@
         "laravel/reverb": "^1.0",
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.10.1",
-        "laravolt/avatar": "^6.3"
+        "laravolt/avatar": "^6.3",
+        "ryangjchandler/laravel-cloudflare-turnstile": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
