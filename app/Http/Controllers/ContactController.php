@@ -20,6 +20,7 @@ class ContactController extends Controller
             'category' => 'required|string|in:Legal Inquiry,Technical Support,Partnership,Other',
             'subject' => 'required|string|max:255',
             'message' => 'required|string|max:2000',
+            'cf-turnstile-response' => ['required', new \App\Rules\Turnstile],
         ]);
 
         ContactSubmission::create([

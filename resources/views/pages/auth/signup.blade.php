@@ -146,6 +146,8 @@
                                         </label>
                                     </div>
                                 </div>
+                                <!-- Turnstile -->
+                                <x-turnstile class="mb-5" />
                                 <!-- Button -->
                                 <div>
                                     <button type="submit"

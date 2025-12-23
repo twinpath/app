@@ -73,6 +73,8 @@
                             class="w-full rounded-2xl border-gray-200 bg-gray-50/50 px-5 py-4 text-sm text-gray-900 transition focus:ring-brand-500 focus:border-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white resize-none">{{ old('message') }}</textarea>
                     </div>
 
+                    <!-- Turnstile -->
+                    <x-turnstile class="mb-5" />
                     <div>
                         <button type="submit"
                             class="flex w-full justify-center rounded-2xl bg-brand-500 px-4 py-5 text-sm font-bold text-white shadow-xl shadow-brand-500/30 hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all active:scale-[0.98]">

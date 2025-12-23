@@ -33,7 +33,10 @@ class SearchController extends Controller
 
         if ($user->isAdmin()) {
             // 2. Admin: User Search
-            $users = User::where('name', 'like', "%$query%")
+            $users = User::where(function($q) use ($query) {
+                    $q->where('first_name', 'like', "%$query%")
+                      ->orWhere('last_name', 'like', "%$query%");
+                })
                 ->orWhere('email', 'like', "%$query%")
                 ->limit(5)
                 ->get()
